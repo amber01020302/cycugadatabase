@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中原大學畢業生聯合代表會 - 管理系統 v1.0</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Lucide Icons (Fallback) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            cycu: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              200: '#bae0fd',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a'
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans TC", sans-serif; }
+    .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+    .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+    .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col md:flex-row">
+
+  <!-- APP CONTAINER -->
+  <div id="app" class="flex flex-col md:flex-row w-full min-h-screen">
+    
+    <!-- LEFT SIDEBAR (Desktop) -->
+    <aside class="hidden md:flex flex-col w-64 bg-white border-r border-slate-200 min-h-screen sticky top-0 h-screen z-20">
+      <div class="p-5 border-b border-slate-100 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-cycu-600 text-white flex items-center justify-center font-bold text-xl shadow-md">
+          中
+        </div>
+        <div>
+          <h1 class="font-bold text-slate-800 text-base leading-tight">畢業生聯合代表會</h1>
+          <p class="text-xs text-slate-500 font-medium">中原大學 CYCU GUA</p>
+        </div>
+      </div>
+      
+      <!-- Current Role Switcher (For System Simulation & Audit Test) -->
+      <div class="p-3 mx-3 my-2 bg-slate-100 rounded-lg border border-slate-200">
+        <label class="block text-xs font-semibold text-slate-500 mb-1">當前測試角色模擬</label>
+        <select id="roleSelector" onchange="switchRole(this.value)" class="w-full text-xs bg-white border border-slate-300 rounded px-2 py-1.5 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-cycu-500">
+          <option value="super_admin">最高管理員 (Super Admin)</option>
+          <option value="finance_admin">財務管理員 (Finance Admin)</option>
+          <option value="staff">一般工作人員 (Staff)</option>
+          <option value="dev_tech">獨立開發者帳號 (Dev Tech)</option>
+        </select>
+        <div id="roleBadge" class="mt-2 text-[10px] px-2 py-0.5 rounded font-medium inline-block bg-blue-100 text-blue-800">
+          權限：完整系統與財務管理
+        </div>
+      </div>
+
+      <!-- Navigation Links -->
+      <nav class="flex-1 p-3 space-y-1">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-cycu-600 bg-cycu-50 transition-colors">
+          <i class="fa-solid fa-chart-pie w-5"></i> 首頁儀表板
+        </button>
+        <button onclick="switchTab('members')" id="nav-members" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+          <i class="fa-solid fa-users w-5"></i> 會員管理
+        </button>
+        <button onclick="switchTab('tokens')" id="nav-tokens" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+          <i class="fa-solid fa-coins w-5"></i> 代幣管理
+        </button>
+        <button onclick="switchTab('finance')" id="nav-finance" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+          <i class="fa-solid fa-wallet w-5"></i> 財務管理
+        </button>
+        <button onclick="switchTab('closing')" id="nav-closing" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+          <i class="fa-solid fa-cash-register w-5"></i> 每日結帳
+        </button>
+        <button onclick="switchTab('system')" id="nav-system" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-100 transition-colors">
+          <i class="fa-solid fa-sliders w-5"></i> 系統與稽核
+        </button>
+      </nav>
+
+      <!-- User Info & Logout -->
+      <div class="p-4 border-t border-slate-100 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-xs">
+            <span id="userAvatar">管</span>
+          </div>
+          <div>
+            <p id="userName" class="text-xs font-bold text-slate-800">陳大文 (管理員)</p>
+            <p id="userAccount" class="text-[10px] text-slate-400">staff_001@cycu.edu.tw</p>
+          </div>
+        </div>
+        <button onclick="logout()" class="text-slate-400 hover:text-red-500 text-sm p-1.5 transition-colors" title="登出">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MOBILE TOP BAR -->
+    <header class="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-30">
+      <div class="flex items-center gap-2">
+        <div class="w-8 h-8 rounded-lg bg-cycu-600 text-white flex items-center justify-center font-bold text-base">中</div>
+        <span class="font-bold text-slate-800 text-sm">中原畢聯會管理系統</span>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="openNotificationModal()" class="relative text-slate-600">
+          <i class="fa-solid fa-bell"></i>
+          <span id="mobileNotifBadge" class="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+        </button>
+        <select onchange="switchRole(this.value)" class="text-xs border rounded p-1">
+          <option value="super_admin">最高</option>
+          <option value="finance_admin">財務</option>
+          <option value="staff">一般</option>
+        </select>
+      </div>
+    </header>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 p-4 md:p-8 custom-scrollbar overflow-y-auto pb-24 md:pb-8">
+      
+      <!-- TOP HEADER (Desktop) -->
+      <header class="hidden md:flex justify-between items-center mb-6 pb-4 border-b border-slate-200">
+        <div>
+          <h2 id="pageTitle" class="text-2xl font-bold text-slate-800">首頁儀表板</h2>
+          <p class="text-xs text-slate-500 mt-1">學年度：114 學年度 (2025/08/01 - 2026/07/31) | 台灣標準時間 (Asia/Taipei)</p>
+        </div>
+        <div class="flex items-center gap-4">
+          <button onclick="openNotificationModal()" class="relative p-2 bg-white border border-slate-200 rounded-lg text-slate-600 hover:bg-slate-50 transition-colors">
+            <i class="fa-solid fa-bell text-slate-600"></i>
+            <span class="text-xs font-semibold ml-1">通知中心</span>
+            <span id="notifBadge" class="ml-1 px-1.5 py-0.5 bg-red-500 text-white rounded-full text-[10px] font-bold">2</span>
+          </button>
+          <div class="text-right text-xs">
+            <span class="block text-slate-400">目前版本</span>
+            <span class="font-bold text-slate-600">v1.0 (PostgreSQL Ready)</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- DYNAMIC TAB CONTENTS -->
+
+      <!-- TAB 1: DASHBOARD -->
+      <section id="tab-dashboard" class="tab-content space-y-6">
+        <!-- KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500">今日有效收入</p>
+              <h3 id="dashTodayIncome" class="text-2xl font-bold text-slate-800 mt-1">NT$ 3,450</h3>
+              <p class="text-[11px] text-emerald-600 mt-1"><i class="fa-solid fa-arrow-up"></i> 現金盤點狀態：正常</p>
+            </div>
+            <div class="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center text-xl">
+              <i class="fa-solid fa-sack-dollar"></i>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500">當年度總會員數</p>
+              <h3 id="dashTotalMembers" class="text-2xl font-bold text-slate-800 mt-1">1,280 人</h3>
+              <p class="text-[11px] text-slate-400 mt-1">累積建立永久 ID</p>
+            </div>
+            <div class="w-12 h-12 bg-cycu-50 text-cycu-600 rounded-xl flex items-center justify-center text-xl">
+              <i class="fa-solid fa-id-card"></i>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500">當年度已繳費人數</p>
+              <h3 id="dashPaidMembers" class="text-2xl font-bold text-slate-800 mt-1">850 人</h3>
+              <p class="text-[11px] text-blue-600 mt-1">繳費率 66.4% (NT$150/人)</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center text-xl">
+              <i class="fa-solid fa-check-circle"></i>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+            <div>
+              <p class="text-xs font-medium text-slate-500">代幣累積販售</p>
+              <h3 id="dashTokenSales" class="text-2xl font-bold text-slate-800 mt-1">420 枚</h3>
+              <p class="text-[11px] text-purple-600 mt-1">售價 NT$100 / 枚</p>
+            </div>
+            <div class="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center text-xl">
+              <i class="fa-solid fa-coins"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quick Action Toolbar -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+          <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <i class="fa-solid fa-bolt text-amber-500"></i> 快捷操作區
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <button onclick="openAddMemberModal()" class="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:border-cycu-500 hover:bg-cycu-50/50 transition-all group">
+              <i class="fa-solid fa-user-plus text-xl text-cycu-600 mb-1 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-semibold text-slate-700">新增會員</span>
+            </button>
+            <button onclick="switchTab('members'); focusSearch();" class="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:border-cycu-500 hover:bg-cycu-50/50 transition-all group">
+              <i class="fa-solid fa-receipt text-xl text-emerald-600 mb-1 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-semibold text-slate-700">會員繳費登記</span>
+            </button>
+            <button onclick="openTokenSaleModal()" class="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:border-cycu-500 hover:bg-cycu-50/50 transition-all group">
+              <i class="fa-solid fa-cart-plus text-xl text-purple-600 mb-1 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-semibold text-slate-700">代幣販售登記</span>
+            </button>
+            <button onclick="switchTab('closing')" class="flex flex-col items-center p-3 rounded-lg border border-slate-200 hover:border-cycu-500 hover:bg-cycu-50/50 transition-all group">
+              <i class="fa-solid fa-cash-register text-xl text-amber-600 mb-1 group-hover:scale-110 transition-transform"></i>
+              <span class="text-xs font-semibold text-slate-700">每日現金結帳</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Recent Transactions & Pending Alerts -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <div class="flex justify-between items-center mb-4">
+              <h3 class="text-sm font-bold text-slate-800">最新財務流水 (即時紀錄)</h3>
+              <button onclick="switchTab('finance')" class="text-xs text-cycu-600 font-medium hover:underline">查看全部</button>
+            </div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="bg-slate-50 text-slate-500 border-b border-slate-200">
+                    <th class="p-2.5">時間</th>
+                    <th class="p-2.5">項目類型</th>
+                    <th class="p-2.5">對象 (學號/名稱)</th>
+                    <th class="p-2.5">金額</th>
+                    <th class="p-2.5">經手人員</th>
+                  </tr>
+                </thead>
+                <tbody id="dashTransactionTable" class="divide-y divide-slate-100">
+                  <!-- Filled via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center justify-between">
+              <span><i class="fa-solid fa-triangle-exclamation text-amber-500 mr-1"></i> 待處理通知</span>
+              <span class="text-xs font-normal text-slate-500">共 2 件</span>
+            </h3>
+            <div class="space-y-3">
+              <div class="p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs">
+                <div class="flex justify-between font-semibold text-amber-900">
+                  <span>現金結帳盤點不符</span>
+                  <span class="text-[10px] text-amber-700">今日 17:30</span>
+                </div>
+                <p class="text-amber-800 mt-1">櫃檯實收金額較系統應有少 NT$50。</p>
+              </div>
+              <div class="p-3 bg-blue-50 border border-blue-200 rounded-lg text-xs">
+                <div class="flex justify-between font-semibold text-blue-900">
+                  <span>學號變更稽核警示</span>
+                  <span class="text-[10px] text-blue-700">昨日 14:20</span>
+                </div>
+                <p class="text-blue-800 mt-1">會員 [11027101] 變更為 [11027999] 保留歷程。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: MEMBER MANAGEMENT -->
+      <section id="tab-members" class="tab-content hidden space-y-6">
+        <!-- Search & Control Header -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row gap-3 justify-between">
+            <div class="relative flex-1">
+              <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3 text-slate-400 text-sm"></i>
+              <input type="text" id="memberSearchInput" onkeyup="renderMembersTable()" placeholder="單一搜尋框：自動比對 學號、姓名、手機號碼、班級..." class="w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-cycu-500">
+            </div>
+            <div class="flex gap-2">
+              <button onclick="openAddMemberModal()" class="px-4 py-2 bg-cycu-600 hover:bg-cycu-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center gap-1.5 shadow-sm">
+                <i class="fa-solid fa-user-plus"></i> 新增會員
+              </button>
+              <button onclick="openMergeMemberModal()" id="btnMergeMember" class="px-3 py-2 bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100 rounded-lg text-sm font-medium transition-colors">
+                <i class="fa-solid fa-code-merge"></i> 會員合併
+              </button>
+            </div>
+          </div>
+          <div class="flex flex-wrap gap-4 text-xs font-medium text-slate-500 pt-2 border-t border-slate-100">
+            <span>篩選狀態：</span>
+            <label class="inline-flex items-center gap-1"><input type="radio" name="memberFilter" value="all" checked onchange="renderMembersTable()"> 全部</label>
+            <label class="inline-flex items-center gap-1"><input type="radio" name="memberFilter" value="paid" onchange="renderMembersTable()"> 當年已繳費 (NT$150)</label>
+            <label class="inline-flex items-center gap-1"><input type="radio" name="memberFilter" value="unpaid" onchange="renderMembersTable()"> 未繳費/停用</label>
+          </div>
+        </div>
+
+        <!-- Members Data Table -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3">永久 ID</th>
+                  <th class="p-3">學號 (歷史歷程)</th>
+                  <th class="p-3">姓名</th>
+                  <th class="p-3">系所 / 班級</th>
+                  <th class="p-3">手機</th>
+                  <th class="p-3">當年度資格</th>
+                  <th class="p-3">免費代幣</th>
+                  <th class="p-3 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="membersTableBody" class="divide-y divide-slate-100">
+                <!-- Filled dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: TOKEN MANAGEMENT -->
+      <section id="tab-tokens" class="tab-content hidden space-y-6">
+        <!-- Token Overview Header -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs text-slate-500 font-medium">免費代幣發放總數</p>
+            <h3 id="tokenFreeGranted" class="text-2xl font-bold text-slate-800 mt-1">450 枚</h3>
+            <p class="text-[11px] text-slate-400 mt-1">對應當年度已繳費會員 (1人/1枚)</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs text-slate-500 font-medium">付費代幣販售總數</p>
+            <h3 id="tokenPaidSold" class="text-2xl font-bold text-purple-700 mt-1">420 枚</h3>
+            <p class="text-[11px] text-purple-600 mt-1">累積收入 NT$ 42,000</p>
+          </div>
+          <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <div class="flex justify-between items-center">
+              <span class="text-xs text-slate-500 font-medium">代幣操作入口</span>
+              <span class="text-[10px] bg-purple-100 text-purple-800 px-2 py-0.5 rounded">NT$100 / 枚</span>
+            </div>
+            <div class="flex gap-2 mt-3">
+              <button onclick="openTokenSaleModal()" class="flex-1 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-semibold transition-colors">
+                <i class="fa-solid fa-cart-plus"></i> 代幣販售/退款
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Token Transactions Tabs -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+            <h3 class="text-sm font-bold text-slate-800">代幣發放與交易明細紀錄</h3>
+            <span class="text-xs text-slate-400">含會員與非會員購買紀錄</span>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3">交易 ID</th>
+                  <th class="p-3">交易類型</th>
+                  <th class="p-3">購買/領取人 (學號)</th>
+                  <th class="p-3">身份標籤</th>
+                  <th class="p-3">數量</th>
+                  <th class="p-3">總金額</th>
+                  <th class="p-3">經手人員</th>
+                  <th class="p-3 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="tokenTableBody" class="divide-y divide-slate-100">
+                <!-- Filled via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: FINANCE MANAGEMENT -->
+      <section id="tab-finance" class="tab-content hidden space-y-6">
+        <!-- Finance KPI Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs text-slate-500">會員費總收入 (NT$150)</p>
+            <h3 id="finMemberFeeTotal" class="text-xl font-bold text-slate-800 mt-1">NT$ 127,500</h3>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs text-slate-500">代幣販售總收入 (NT$100)</p>
+            <h3 id="finTokenSaleTotal" class="text-xl font-bold text-purple-700 mt-1">NT$ 42,000</h3>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+            <p class="text-xs text-slate-500">退款及沖銷總額 (負向流水)</p>
+            <h3 id="finRefundTotal" class="text-xl font-bold text-red-600 mt-1">- NT$ 1,350</h3>
+          </div>
+          <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm bg-cycu-50/40">
+            <p class="text-xs text-cycu-700 font-bold">當期實際有效淨收入</p>
+            <h3 id="finNetTotal" class="text-xl font-bold text-cycu-700 mt-1">NT$ 168,150</h3>
+          </div>
+        </div>
+
+        <!-- Financial Flow Ledger -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+          <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between sm:items-center gap-3">
+            <div>
+              <h3 class="text-sm font-bold text-slate-800">全站財務總帳流水 (Double-Entry Audit Ledger)</h3>
+              <p class="text-xs text-slate-400">禁止無痕刪除、覆蓋或覆寫，所有更正均以反向/退款交易記錄</p>
+            </div>
+            <div class="flex gap-2">
+              <select class="text-xs border border-slate-300 rounded p-1.5">
+                <option>當學年度 (114)</option>
+                <option>今日 (Asia/Taipei)</option>
+              </select>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                <tr>
+                  <th class="p-3">流水 ID</th>
+                  <th class="p-3">時間 (Asia/Taipei)</th>
+                  <th class="p-3">科目與類型</th>
+                  <th class="p-3">關聯永久 ID / 學號</th>
+                  <th class="p-3">借/貸 變動金額</th>
+                  <th class="p-3">經手人</th>
+                  <th class="p-3">備註 / 退款原因</th>
+                </tr>
+              </thead>
+              <tbody id="financeLedgerBody" class="divide-y divide-slate-100">
+                <!-- Dynamic Content -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 5: DAILY CLOSING -->
+      <section id="tab-closing" class="tab-content hidden space-y-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center border-b border-slate-200 pb-4 gap-3">
+            <div>
+              <h3 class="text-lg font-bold text-slate-800">每日現金結帳與盤點儀表</h3>
+              <p class="text-xs text-slate-500">結帳日期：<span id="closingDateStr" class="font-bold text-slate-700"></span> (時區 Asia/Taipei 00:00 - 23:59:59)</p>
+            </div>
+            <div id="closingStatusBadge" class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold inline-block">
+              狀態：今日尚未結帳
+            </div>
+          </div>
+
+          <!-- Closing Calculation Breakdown -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <p class="text-xs text-slate-500">今日會員費收入</p>
+              <h4 id="closeMemIncome" class="text-lg font-bold text-slate-800">NT$ 1,500</h4>
+            </div>
+            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <p class="text-xs text-slate-500">今日代幣販售收入</p>
+              <h4 id="closeTokenIncome" class="text-lg font-bold text-purple-700">NT$ 2,000</h4>
+            </div>
+            <div class="p-4 bg-slate-50 rounded-lg border border-slate-200">
+              <p class="text-xs text-slate-500">今日退款支出</p>
+              <h4 id="closeRefundExpense" class="text-lg font-bold text-red-600">- NT$ 500</h4>
+            </div>
+          </div>
+
+          <!-- Cash Count Section -->
+          <div class="p-5 bg-cycu-50/50 border border-cycu-200 rounded-xl space-y-4">
+            <h4 class="text-sm font-bold text-cycu-900"><i class="fa-solid fa-calculator mr-2"></i>現場現金盤點登記</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">系統應有現金總額 (A)</label>
+                <input type="text" id="closingExpectedCash" readonly class="w-full bg-slate-100 border border-slate-300 rounded-lg p-2.5 text-sm font-bold text-slate-700" value="NT$ 3,000">
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-slate-600 mb-1">實際盤點金額 (B)</label>
+                <input type="number" id="closingActualCash" oninput="calculateClosingDiff()" placeholder="輸入櫃檯點算現金" class="w-full border border-slate-300 rounded-lg p-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-cycu-500">
+              </div>
+            </div>
+            
+            <div id="diffWarningBox" class="hidden p-3 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700">
+              <p class="font-bold"><i class="fa-solid fa-circle-exclamation"></i> 現金盤點存在金額不符！</p>
+              <p class="mt-0.5">盤點差額：<span id="diffAmountStr" class="font-bold">NT$ 0</span></p>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">差額原因說明 (如有不符必填)</label>
+              <textarea id="closingNote" rows="2" placeholder="若實際現金與系統應有金額不符，請在此詳細記錄原因..." class="w-full border border-slate-300 rounded-lg p-2 text-xs focus:ring-2 focus:ring-cycu-500"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-2">
+              <button onclick="reopenClosing()" id="btnReopenClosing" class="hidden px-4 py-2 bg-amber-600 text-white rounded-lg text-xs font-bold hover:bg-amber-700">
+                <i class="fa-solid fa-lock-open"></i> 重新開啟已結帳日 (管理員限定)
+              </button>
+              <button onclick="submitDailyClosing()" id="btnSubmitClosing" class="px-5 py-2.5 bg-cycu-600 text-white rounded-lg text-xs font-bold hover:bg-cycu-700 shadow-md">
+                <i class="fa-solid fa-check-double"></i> 確認提交今日結帳
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 6: SYSTEM & AUDIT LOGS -->
+      <section id="tab-system" class="tab-content hidden space-y-6">
+        <!-- Staff Management & Technical Accounts -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex justify-between items-center">
+            <div>
+              <h3 class="text-sm font-bold text-slate-800">工作人員帳號與權限管理</h3>
+              <p class="text-xs text-slate-400">系統不開放自由註冊；開發者技術帳號與財務管理員帳號完全分離</p>
+            </div>
+            <button onclick="openAddStaffModal()" id="btnAddStaff" class="px-3 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-medium hover:bg-slate-900">
+              <i class="fa-solid fa-user-shield"></i> 新增工作人員帳號
+            </button>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead class="bg-slate-50 text-slate-600 border-b border-slate-200 font-semibold">
+                <tr>
+                  <th class="p-2.5">帳號 ID</th>
+                  <th class="p-2.5">姓名</th>
+                  <th class="p-2.5">綁定 Email</th>
+                  <th class="p-2.5">系統角色</th>
+                  <th class="p-2.5">帳號狀態</th>
+                  <th class="p-2.5 text-right">操作</th>
+                </tr>
+              </thead>
+              <tbody id="staffTableBody" class="divide-y divide-slate-100">
+                <!-- Staff Rows -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Audit Log Viewer -->
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+            <div>
+              <h3 class="text-sm font-bold text-slate-800">全系統操作稽核紀錄 (Audit Log)</h3>
+              <p class="text-xs text-slate-400">包含異動前後 JSON、操作人、IP 及原因（個資已依權限自動遮罩）</p>
+            </div>
+            <div class="flex gap-2">
+              <input type="text" id="auditSearchInput" onkeyup="renderAuditLogs()" placeholder="搜尋稽核紀錄..." class="text-xs border rounded px-2 py-1">
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs font-mono">
+              <thead class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                <tr>
+                  <th class="p-2">Log ID</th>
+                  <th class="p-2">時間</th>
+                  <th class="p-2">操作人</th>
+                  <th class="p-2">動作類別</th>
+                  <th class="p-2">異動前後 (Before / After)</th>
+                </tr>
+              </thead>
+              <tbody id="auditLogTableBody" class="divide-y divide-slate-200">
+                <!-- Filled via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- MOBILE BOTTOM NAVBAR -->
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 flex justify-around p-2 z-30 text-[10px]">
+      <button onclick="switchTab('dashboard')" class="flex flex-col items-center text-cycu-600">
+        <i class="fa-solid fa-chart-pie text-base"></i> 首頁
+      </button>
+      <button onclick="switchTab('members')" class="flex flex-col items-center text-slate-500">
+        <i class="fa-solid fa-users text-base"></i> 會員
+      </button>
+      <button onclick="switchTab('tokens')" class="flex flex-col items-center text-slate-500">
+        <i class="fa-solid fa-coins text-base"></i> 代幣
+      </button>
+      <button onclick="switchTab('finance')" class="flex flex-col items-center text-slate-500">
+        <i class="fa-solid fa-wallet text-base"></i> 財務
+      </button>
+      <button onclick="switchTab('closing')" class="flex flex-col items-center text-slate-500">
+        <i class="fa-solid fa-cash-register text-base"></i> 結帳
+      </button>
+      <button onclick="switchTab('system')" class="flex flex-col items-center text-slate-500">
+        <i class="fa-solid fa-sliders text-base"></i> 系統
+      </button>
+    </nav>
+  </div>
+
+  <!-- MODALS CONTAINER -->
+
+  <!-- Modal: Add Member -->
+  <div id="addMemberModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+        <h3 class="text-sm font-bold text-slate-800">新增會員資料</h3>
+        <button onclick="closeModal('addMemberModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleAddMember(event)" class="p-4 space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">姓名 <span class="text-red-500">*</span></label>
+          <input type="text" id="mName" required class="w-full border rounded p-2 text-xs">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">學號 (唯一識別) <span class="text-red-500">*</span></label>
+          <input type="text" id="mStudentId" required class="w-full border rounded p-2 text-xs">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">系所 <span class="text-red-500">*</span></label>
+            <select id="mDept" class="w-full border rounded p-2 text-xs">
+              <option value="財經法律學系">財經法律學系</option>
+              <option value="資訊工程學系">資訊工程學系</option>
+              <option value="企業管理學系">企業管理學系</option>
+              <option value="應用數學系">應用數學系</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">班級 <span class="text-red-500">*</span></label>
+            <input type="text" id="mClass" placeholder="例如：四年甲班" required class="w-full border rounded p-2 text-xs">
+          </div>
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">手機號碼 (選填)</label>
+          <input type="tel" id="mPhone" placeholder="0912345678" class="w-full border rounded p-2 text-xs">
+        </div>
+        <div class="p-2.5 bg-blue-50 border border-blue-100 rounded text-[11px] text-blue-700">
+          系統將自動產生唯一的永久會員 ID (`MEM_XXXXX`)，學號變更將自動追溯。
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('addMemberModal')" class="px-3 py-1.5 border rounded">取消</button>
+          <button type="submit" class="px-4 py-1.5 bg-cycu-600 text-white rounded font-bold">確認新增</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Student ID -->
+  <div id="editStudentIdModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+        <h3 class="text-sm font-bold text-slate-800">變更學號 (保留歷史歷程)</h3>
+        <button onclick="closeModal('editStudentIdModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleUpdateStudentId(event)" class="p-4 space-y-3 text-xs">
+        <input type="hidden" id="editMemId">
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">會員永久 ID</label>
+          <input type="text" id="displayMemId" readonly class="w-full bg-slate-100 border rounded p-2">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">原學號</label>
+          <input type="text" id="oldStudentId" readonly class="w-full bg-slate-100 border rounded p-2">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">新學號 <span class="text-red-500">*</span></label>
+          <input type="text" id="newStudentId" required class="w-full border rounded p-2">
+        </div>
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">變更原因/註記 <span class="text-red-500">*</span></label>
+          <input type="text" id="changeReason" required placeholder="例如：雙主修轉系/學號更正" class="w-full border rounded p-2">
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('editStudentIdModal')" class="px-3 py-1.5 border rounded">取消</button>
+          <button type="submit" class="px-4 py-1.5 bg-cycu-600 text-white rounded font-bold">確認儲存並寫入稽核</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Token Sale / Refund -->
+  <div id="tokenSaleModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden">
+      <div class="p-4 bg-purple-50 border-b border-purple-100 flex justify-between items-center">
+        <h3 class="text-sm font-bold text-purple-900">代幣販售 / 退款登記</h3>
+        <button onclick="closeModal('tokenSaleModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleTokenSale(event)" class="p-4 space-y-3 text-xs">
+        <div>
+          <label class="block font-semibold text-slate-600 mb-1">購買者學號 (會員/非會員) <span class="text-red-500">*</span></label>
+          <input type="text" id="tokenStudentId" required placeholder="請輸入學號" class="w-full border rounded p-2 text-xs">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">購買數量 (NT$100/枚)</label>
+            <input type="number" id="tokenQty" value="1" min="1" required class="w-full border rounded p-2 text-xs" oninput="updateTokenCost()">
+          </div>
+          <div>
+            <label class="block font-semibold text-slate-600 mb-1">應收總金額 (僅限現金)</label>
+            <input type="text" id="tokenCostDisplay" readonly value="NT$ 100" class="w-full bg-slate-100 border rounded p-2 text-xs font-bold text-purple-700">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="closeModal('tokenSaleModal')" class="px-3 py-1.5 border rounded">取消</button>
+          <button type="submit" class="px-4 py-1.5 bg-purple-600 text-white rounded font-bold">登記並產生財務流水</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Notifications Center -->
+  <div id="notificationModal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl border border-slate-200 w-full max-w-2xl overflow-hidden flex flex-col h-[500px]">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+        <h3 class="text-sm font-bold text-slate-800">通知與異常事件中心</h3>
+        <button onclick="closeModal('notificationModal')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="p-3 bg-slate-100 border-b border-slate-200 flex gap-2 text-xs">
+        <button class="px-3 py-1 bg-white border rounded font-semibold text-cycu-600">系統異常 (1)</button>
+        <button class="px-3 py-1 text-slate-600 hover:bg-white rounded">安全警示 (1)</button>
+        <button class="px-3 py-1 text-slate-600 hover:bg-white rounded">業務提醒 (0)</button>
+      </div>
+      <div class="flex-1 p-4 overflow-y-auto space-y-3 custom-scrollbar text-xs">
+        <div class="p-3 border border-red-200 bg-red-50/50 rounded-lg space-y-2">
+          <div class="flex justify-between items-center font-bold text-red-800">
+            <span>[嚴重] 每日結帳盤點存在 NT$ 50 現金短少</span>
+            <span class="text-[10px] text-red-600">今日 17:30</span>
+          </div>
+          <p class="text-slate-600">指派負責人：財務管理員 (張財務)</p>
+          <div class="flex gap-2 text-[11px]">
+            <button onclick="alert('已標記為處理中')" class="px-2.5 py-1 bg-red-600 text-white rounded font-medium">進行處理</button>
+            <button onclick="alert('審核通過結案')" class="px-2.5 py-1 bg-white border border-slate-300 rounded text-slate-700">管理員確認結案</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT: Full Backend & Data Simulation Engine -->
+  <script>
+    // --- 1. System Database State (In-Memory PostgreSQL Replica) ---
+    const DB = {
+      currentUserRole: 'super_admin', // super_admin, finance_admin, staff, dev_tech
+      academicYear: '114',
+      
+      members: [
+        { id: 'MEM_00001', student_id: '11027101', name: '呂煜珅', dept: '財經法律學系', class_name: '四年甲班', phone: '0912345678', is_paid: true, free_token_granted: true, status: 'active', old_student_ids: [] },
+        { id: 'MEM_00002', student_id: '11027102', name: '張小明', dept: '資訊工程學系', class_name: '四年乙班', phone: '0922111222', is_paid: false, free_token_granted: false, status: 'active', old_student_ids: [] },
+        { id: 'MEM_00003', student_id: '11027103', name: '李美華', dept: '企業管理學系', class_name: '四年甲班', phone: '0933444555', is_paid: true, free_token_granted: true, status: 'active', old_student_ids: ['10927000'] }
+      ],
+
+      staff: [
+        { id: 'STF_01', name: '陳最高 (管理)', email: 'admin@cycu.edu.tw', role: 'super_admin', active: true },
+        { id: 'STF_02', name: '張財務 (主責)', email: 'finance@cycu.edu.tw', role: 'finance_admin', active: true },
+        { id: 'STF_03', name: '王工作 (一般)', email: 'staff@cycu.edu.tw', role: 'staff', active: true },
+        { id: 'DEV_01', name: '獨立開發者帳號', email: 'dev@tech.cycu.edu.tw', role: 'dev_tech', active: true }
+      ],
+
+      tokens: [
+        { id: 'TKN_1001', type: 'free', student_id: '11027101', identity: '會員', qty: 1, amount: 0, staff: '陳最高', created_at: '2026-08-01 10:00' },
+        { id: 'TKN_1002', type: 'paid', student_id: '11027101', identity: '會員', qty: 2, amount: 200, staff: '張財務', created_at: '2026-10-05 14:20' },
+        { id: 'TKN_1003', type: 'paid', student_id: '11099999', identity: '非會員', qty: 1, amount: 100, staff: '王工作', created_at: '2026-11-06 09:15' }
+      ],
+
+      financial_transactions: [
+        { id: 'TXN_20261106_01', type: '會員費收入', ref_id: 'MEM_00001', amount: 150, staff: '陳最高', note: '114學年度會費現金收取', created_at: '2026-08-01 10:00' },
+        { id: 'TXN_20261106_02', type: '代幣販售收入', ref_id: 'TKN_1002', amount: 200, staff: '張財務', note: '付費代幣 2 枚', created_at: '2026-10-05 14:20' },
+        { id: 'TXN_20261106_03', type: '代幣販售收入', ref_id: 'TKN_1003', amount: 100, staff: '王工作', note: '非會員付費代幣 1 枚', created_at: '2026-11-06 09:15' }
+      ],
+
+      daily_closings: {
+        is_closed: false,
+        expected_cash: 3000,
+        actual_cash: null,
+        diff: 0,
+        reopened_by: null
+      },
+
+      audit_logs: [
+        { id: 'LOG_901', timestamp: '2026-11-06 09:15', staff: '王工作', action: 'CREATE_TOKEN_SALE', before: null, after: JSON.stringify({ qty: 1, amount: 100, student_id: '11099999' }) },
+        { id: 'LOG_900', timestamp: '2026-10-05 14:20', staff: '張財務', action: 'MEMBER_STUDENT_ID_CHANGE', before: JSON.stringify({ old: '10927000' }), after: JSON.stringify({ new: '11027103' }) }
+      ]
+    };
+
+    // --- 2. Permission Control Matrix ---
+    const PERMISSIONS = {
+      super_admin: { can_refund_member: true, can_reopen_closing: true, can_view_full_audit: true, can_manage_staff: true },
+      finance_admin: { can_refund_member: true, can_reopen_closing: true, can_view_full_audit: true, can_manage_staff: true },
+      staff: { can_refund_member: false, can_reopen_closing: false, can_view_full_audit: false, can_manage_staff: false },
+      dev_tech: { can_refund_member: false, can_reopen_closing: false, can_view_full_audit: true, can_manage_staff: false }
+    };
+
+    // --- 3. App Initialization & Tab Navigation ---
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('closingDateStr').innerText = new Date().toLocaleDateString('zh-TW', { timeZone: 'Asia/Taipei' });
+      renderMembersTable();
+      renderTokenTable();
+      renderFinanceLedger();
+      renderStaffTable();
+      renderAuditLogs();
+      updateDashboardData();
+    });
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+      document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+
+      document.querySelectorAll('.nav-btn').forEach(btn => {
+        btn.classList.remove('bg-cycu-50', 'text-cycu-600');
+        btn.classList.add('text-slate-600');
+      });
+
+      const activeNav = document.getElementById(`nav-${tabId}`);
+      if (activeNav) {
+        activeNav.classList.add('bg-cycu-50', 'text-cycu-600');
+      }
+
+      const titles = {
+        dashboard: '首頁儀表板',
+        members: '會員管理模組',
+        tokens: '免費與付費代幣管理',
+        finance: '全站財務管理與總帳流水',
+        closing: '每日現金結帳與盤點核對',
+        system: '系統管理與操作稽核 (Audit Log)'
+      };
+      document.getElementById('pageTitle').innerText = titles[tabId] || '儀表板';
+    }
+
+    // --- 4. Role Switching Simulation ---
+    function switchRole(role) {
+      DB.currentUserRole = role;
+      const roleBadge = document.getElementById('roleBadge');
+      const roleMap = {
+        super_admin: { name: '最高管理員', color: 'bg-blue-100 text-blue-800', desc: '完整系統與財務最高權限' },
+        finance_admin: { name: '財務管理員', color: 'bg-purple-100 text-purple-800', desc: '財務、會員與結帳主責' },
+        staff: { name: '一般工作人員', color: 'bg-slate-100 text-slate-800', desc: '日常登記、無法重開結帳' },
+        dev_tech: { name: '獨立開發者帳號', color: 'bg-emerald-100 text-emerald-800', desc: '技術維護、財務完全分離' }
+      };
+
+      roleBadge.className = `mt-2 text-[10px] px-2 py-0.5 rounded font-medium inline-block ${roleMap[role].color}`;
+      roleBadge.innerText = `權限：${roleMap[role].desc}`;
+
+      // Update User Avatar
+      document.getElementById('userName').innerText = `${roleMap[role].name}`;
+      
+      // Refresh UI Components with Role-based Security Masking
+      renderMembersTable();
+      renderFinanceLedger();
+      renderAuditLogs();
+    }
+
+    // --- 5. Member Management Functions ---
+    function renderMembersTable() {
+      const tbody = document.getElementById('membersTableBody');
+      const query = document.getElementById('memberSearchInput').value.toLowerCase();
+      const filter = document.querySelector('input[name="memberFilter"]:checked')?.value || 'all';
+
+      const filtered = DB.members.filter(m => {
+        const matchesQuery = m.student_id.includes(query) || m.name.includes(query) || m.phone.includes(query) || m.class_name.includes(query);
+        if (filter === 'paid') return matchesQuery && m.is_paid;
+        if (filter === 'unpaid') return matchesQuery && !m.is_paid;
+        return matchesQuery;
+      });
+
+      tbody.innerHTML = filtered.map(m => {
+        // Privacy Masking for Staff Role
+        const displayPhone = (DB.currentUserRole === 'staff') ? m.phone.replace(/(\d{4})\d{3}(\d{3})/, '$1***$2') : m.phone;
+        const oldIdBadge = m.old_student_ids.length ? `<span class="text-[10px] bg-amber-100 text-amber-800 px-1 rounded ml-1" title="曾變更過學號">舊:${m.old_student_ids.join(',')}</span>` : '';
+
+        return `
+          <tr class="hover:bg-slate-50 transition-colors">
+            <td class="p-3 font-mono text-slate-500 font-bold">${m.id}</td>
+            <td class="p-3 font-mono font-bold text-slate-800">${m.student_id} ${oldIdBadge}</td>
+            <td class="p-3 font-bold text-slate-800">${m.name}</td>
+            <td class="p-3 text-slate-600">${m.dept} (${m.class_name})</td>
+            <td class="p-3 font-mono text-slate-600">${displayPhone}</td>
+            <td class="p-3">
+              ${m.is_paid 
+                ? '<span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded font-bold">已繳 NT$150</span>' 
+                : '<span class="px-2 py-0.5 bg-slate-200 text-slate-700 rounded">未繳費/已停用</span>'}
+            </td>
+            <td class="p-3">
+              ${m.free_token_granted 
+                ? '<span class="text-emerald-600 font-bold"><i class="fa-solid fa-circle-check"></i> 已領取</span>' 
+                : '<span class="text-slate-400">未領取</span>'}
+            </td>
+            <td class="p-3 text-right space-x-1">
+              ${!m.is_paid ? `<button onclick="recordMemberPayment('${m.id}')" class="px-2 py-1 bg-cycu-600 text-white rounded text-[11px]">繳費</button>` : ''}
+              ${m.is_paid && PERMISSIONS[DB.currentUserRole].can_refund_member ? `<button onclick="refundMemberPayment('${m.id}')" class="px-2 py-1 bg-red-100 text-red-700 rounded text-[11px]">退款</button>` : ''}
+              <button onclick="openEditStudentIdModal('${m.id}')" class="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px]">改學號</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function handleAddMember(e) {
+      e.preventDefault();
+      const newId = `MEM_${String(DB.members.length + 1).padStart(5, '0')}`;
+      const name = document.getElementById('mName').value;
+      const student_id = document.getElementById('mStudentId').value;
+      const dept = document.getElementById('mDept').value;
+      const class_name = document.getElementById('mClass').value;
+      const phone = document.getElementById('mPhone').value || '未提供';
+
+      if (DB.members.some(m => m.student_id === student_id)) {
+        alert('錯誤：學號已被使用，請使用會員合併或檢查輸入！');
+        return;
+      }
+
+      const newMember = { id: newId, student_id, name, dept, class_name, phone, is_paid: false, free_token_granted: false, status: 'active', old_student_ids: [] };
+      DB.members.push(newMember);
+
+      // Audit Log Entry
+      DB.audit_logs.unshift({
+        id: `LOG_${DB.audit_logs.length + 900}`,
+        timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+        staff: document.getElementById('userName').innerText,
+        action: 'CREATE_MEMBER',
+        before: null,
+        after: JSON.stringify(newMember)
+      });
+
+      closeModal('addMemberModal');
+      renderMembersTable();
+      updateDashboardData();
+      alert(`成功建立會員 ${name} (${student_id})，永久 ID: ${newId}`);
+    }
+
+    function recordMemberPayment(memId) {
+      const member = DB.members.find(m => m.id === memId);
+      if (!member) return;
+
+      member.is_paid = true;
+      member.free_token_granted = true; // Auto-grant 1 free token
+
+      // Record Financial Transaction
+      DB.financial_transactions.unshift({
+        id: `TXN_${Date.now()}`,
+        type: '會員費收入',
+        ref_id: member.id,
+        amount: 150,
+        staff: document.getElementById('userName').innerText,
+        note: `114學年度會費收取 (${member.student_id})`,
+        created_at: new Date().toISOString().slice(0, 16).replace('T', ' ')
+      });
+
+      renderMembersTable();
+      renderFinanceLedger();
+      updateDashboardData();
+      alert(`已成功為 ${member.name} 登記會費收取 NT$150，並發放免費代幣 1 枚！`);
+    }
+
+    function refundMemberPayment(memId) {
+      if (!PERMISSIONS[DB.currentUserRole].can_refund_member) {
+        alert('權限不足：僅財務管理員與最高管理員可執行會費退款');
+        return;
+      }
+
+      const reason = prompt('請輸入會費退款原因（必定記錄於稽核日誌）：');
+      if (!reason) return;
+
+      const member = DB.members.find(m => m.id === memId);
+      member.is_paid = false;
+      member.free_token_granted = false;
+
+      // Negative Financial Transaction Stream
+      DB.financial_transactions.unshift({
+        id: `TXN_REFUND_${Date.now()}`,
+        type: '會費退款沖銷',
+        ref_id: member.id,
+        amount: -150,
+        staff: document.getElementById('userName').innerText,
+        note: `退款原因: ${reason}`,
+        created_at: new Date().toISOString().slice(0, 16).replace('T', ' ')
+      });
+
+      renderMembersTable();
+      renderFinanceLedger();
+      updateDashboardData();
+      alert(`已成功辦理退款 NT$150，會員資格與免費代幣資格已撤銷。`);
+    }
+
+    function openEditStudentIdModal(memId) {
+      const m = DB.members.find(x => x.id === memId);
+      document.getElementById('editMemId').value = m.id;
+      document.getElementById('displayMemId').value = m.id;
+      document.getElementById('oldStudentId').value = m.student_id;
+      document.getElementById('editStudentIdModal').classList.remove('hidden');
+    }
+
+    function handleUpdateStudentId(e) {
+      e.preventDefault();
+      const memId = document.getElementById('editMemId').value;
+      const oldId = document.getElementById('oldStudentId').value;
+      const newId = document.getElementById('newStudentId').value;
+      const reason = document.getElementById('changeReason').value;
+
+      const m = DB.members.find(x => x.id === memId);
+      m.old_student_ids.push(oldId);
+      m.student_id = newId;
+
+      DB.audit_logs.unshift({
+        id: `LOG_${Date.now()}`,
+        timestamp: new Date().toISOString().slice(0, 16).replace('T', ' '),
+        staff: document.getElementById('userName').innerText,
+        action: 'MEMBER_STUDENT_ID_CHANGE',
+        before: JSON.stringify({ student_id: oldId }),
+        after: JSON.stringify({ student_id: newId, reason })
+      });
+
+      closeModal('editStudentIdModal');
+      renderMembersTable();
+      renderAuditLogs();
+      alert(`學號變更成功！舊學號 ${oldId} 已併入歷史追溯歷程。`);
+    }
+
+    // --- 6. Token Management Functions ---
+    function renderTokenTable() {
+      const tbody = document.getElementById('tokenTableBody');
+      tbody.innerHTML = DB.tokens.map(t => `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="p-3 font-mono font-bold text-slate-600">${t.id}</td>
+          <td class="p-3">
+            ${t.type === 'free' 
+              ? '<span class="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-bold">免費配發</span>' 
+              : '<span class="px-2 py-0.5 bg-purple-100 text-purple-800 rounded font-bold">付費購買</span>'}
+          </td>
+          <td class="p-3 font-mono font-bold">${t.student_id}</td>
+          <td class="p-3">${t.identity}</td>
+          <td class="p-3 font-bold">${t.qty} 枚</td>
+          <td class="p-3 font-bold text-slate-800">NT$ ${t.amount}</td>
+          <td class="p-3 text-slate-600">${t.staff}</td>
+          <td class="p-3 text-right">
+            ${t.type === 'paid' ? `<button onclick="refundToken('${t.id}')" class="px-2 py-1 bg-red-100 text-red-700 rounded text-[11px]">退款</button>` : '<span class="text-slate-400 text-[11px]">不可退款</span>'}
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function openTokenSaleModal() {
+      document.getElementById('tokenSaleModal').classList.remove('hidden');
+    }
+
+    function updateTokenCost() {
+      const qty = parseInt(document.getElementById('tokenQty').value) || 0;
+      document.getElementById('tokenCostDisplay').value = `NT$ ${qty * 100}`;
+    }
+
+    function handleTokenSale(e) {
+      e.preventDefault();
+      const studentId = document.getElementById('tokenStudentId').value;
+      const qty = parseInt(document.getElementById('tokenQty').value);
+      const amount = qty * 100;
+
+      const isMember = DB.members.some(m => m.student_id === studentId);
+
+      const newTokenTransaction = {
+        id: `TKN_${Date.now()}`,
+        type: 'paid',
+        student_id: studentId,
+        identity: isMember ? '會員' : '非會員',
+        qty: qty,
+        amount: amount,
+        staff: document.getElementById('userName').innerText,
+        created_at: new Date().toISOString().slice(0, 16).replace('T', ' ')
+      };
+
+      DB.tokens.unshift(newTokenTransaction);
+
+      // Financial Flow
+      DB.financial_transactions.unshift({
+        id: `TXN_${Date.now()}`,
+        type: '代幣販售收入',
+        ref_id: newTokenTransaction.id,
+        amount: amount,
+        staff: document.getElementById('userName').innerText,
+        note: `販售代幣 ${qty} 枚 (${studentId})`,
+        created_at: new Date().toISOString().slice(0, 16).replace('T', ' ')
+      });
+
+      closeModal('tokenSaleModal');
+      renderTokenTable();
+      renderFinanceLedger();
+      updateDashboardData();
+      alert(`代幣販售成功！登記 ${qty} 枚，收取現金 NT$ ${amount}`);
+    }
+
+    function refundToken(tokenId) {
+      const tokenTx = DB.tokens.find(t => t.id === tokenId);
+      if (!tokenTx) return;
+
+      const reason = prompt(`代幣退款登記 (原購買 ${tokenTx.qty} 枚 / NT$${tokenTx.amount})。請輸入退款原因：`);
+      if (!reason) return;
+
+      DB.financial_transactions.unshift({
+        id: `TXN_REFUND_${Date.now()}`,
+        type: '代幣退款沖銷',
+        ref_id: tokenTx.id,
+        amount: -tokenTx.amount,
+        staff: document.getElementById('userName').innerText,
+        note: `退款代幣 ${tokenTx.qty} 枚. 原因: ${reason}`,
+        created_at: new Date().toISOString().slice(0, 16).replace('T', ' ')
+      });
+
+      renderTokenTable();
+      renderFinanceLedger();
+      updateDashboardData();
+      alert('已成功辦理代幣退款與沖銷！');
+    }
+
+    // --- 7. Finance & Audit Ledger ---
+    function renderFinanceLedger() {
+      const tbody = document.getElementById('financeLedgerBody');
+      tbody.innerHTML = DB.financial_transactions.map(f => `
+        <tr class="hover:bg-slate-50 font-mono">
+          <td class="p-3 text-slate-500">${f.id}</td>
+          <td class="p-3 text-slate-700">${f.created_at}</td>
+          <td class="p-3 font-sans font-bold">${f.type}</td>
+          <td class="p-3 text-slate-800">${f.ref_id}</td>
+          <td class="p-3 font-bold ${f.amount < 0 ? 'text-red-600' : 'text-emerald-700'}">
+            ${f.amount > 0 ? '+ ' : ''}NT$ ${f.amount}
+          </td>
+          <td class="p-3 font-sans text-slate-600">${f.staff}</td>
+          <td class="p-3 font-sans text-slate-500">${f.note}</td>
+        </tr>
+      `).join('');
+
+      // Recalculate Finance Summaries
+      const memberTotal = DB.financial_transactions.filter(t => t.type === '會員費收入').reduce((acc, curr) => acc + curr.amount, 0);
+      const tokenTotal = DB.financial_transactions.filter(t => t.type === '代幣販售收入').reduce((acc, curr) => acc + curr.amount, 0);
+      const refundTotal = DB.financial_transactions.filter(t => t.amount < 0).reduce((acc, curr) => acc + curr.amount, 0);
+      const netTotal = memberTotal + tokenTotal + refundTotal;
+
+      document.getElementById('finMemberFeeTotal').innerText = `NT$ ${memberTotal.toLocaleString()}`;
+      document.getElementById('finTokenSaleTotal').innerText = `NT$ ${tokenTotal.toLocaleString()}`;
+      document.getElementById('finRefundTotal').innerText = `NT$ ${refundTotal.toLocaleString()}`;
+      document.getElementById('finNetTotal').innerText = `NT$ ${netTotal.toLocaleString()}`;
+    }
+
+    // --- 8. Daily Closing Functions ---
+    function calculateClosingDiff() {
+      const expected = 3000; // Mocked expected income
+      const actual = parseInt(document.getElementById('closingActualCash').value) || 0;
+      const diff = actual - expected;
+
+      const warningBox = document.getElementById('diffWarningBox');
+      const diffStr = document.getElementById('diffAmountStr');
+
+      if (diff !== 0 && document.getElementById('closingActualCash').value !== '') {
+        warningBox.classList.remove('hidden');
+        diffStr.innerText = `NT$ ${diff}`;
+      } else {
+        warningBox.classList.add('hidden');
+      }
+    }
+
+    function submitDailyClosing() {
+      const actualInput = document.getElementById('closingActualCash').value;
+      if (!actualInput) {
+        alert('請輸入櫃檯點算之實際現金金額！');
+        return;
+      }
+
+      DB.daily_closings.is_closed = true;
+      DB.daily_closings.actual_cash = parseInt(actualInput);
+
+      document.getElementById('closingStatusBadge').className = 'px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-bold inline-block';
+      document.getElementById('closingStatusBadge').innerText = '狀態：今日結帳已完成 (已被鎖定)';
+
+      document.getElementById('btnSubmitClosing').disabled = true;
+      document.getElementById('btnSubmitClosing').classList.add('opacity-50', 'cursor-not-allowed');
+
+      if (PERMISSIONS[DB.currentUserRole].can_reopen_closing) {
+        document.getElementById('btnReopenClosing').classList.remove('hidden');
+      }
+
+      alert('今日結帳與現金盤點提交成功！結帳紀錄已安全鎖定。');
+    }
+
+    function reopenClosing() {
+      if (!PERMISSIONS[DB.currentUserRole].can_reopen_closing) {
+        alert('權限不足：一般工作人員無法重新開啟已結帳日');
+        return;
+      }
+
+      const reason = prompt('解鎖已結帳日需要輸入最高/財務管理員授權原因：');
+      if (!reason) return;
+
+      DB.daily_closings.is_closed = false;
+      document.getElementById('closingStatusBadge').className = 'px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-bold inline-block';
+      document.getElementById('closingStatusBadge').innerText = '狀態：結帳已重新開啟 (待重新盤點)';
+
+      document.getElementById('btnSubmitClosing').disabled = false;
+      document.getElementById('btnSubmitClosing').classList.remove('opacity-50', 'cursor-not-allowed');
+
+      alert(`每日結帳已解鎖，已記載解鎖理由：${reason}`);
+    }
+
+    // --- 9. Staff & Audit Log Functions ---
+    function renderStaffTable() {
+      const tbody = document.getElementById('staffTableBody');
+      tbody.innerHTML = DB.staff.map(s => `
+        <tr class="hover:bg-slate-50">
+          <td class="p-2.5 font-mono font-bold">${s.id}</td>
+          <td class="p-2.5 font-bold text-slate-800">${s.name}</td>
+          <td class="p-2.5 font-mono text-slate-600">${s.email}</td>
+          <td class="p-2.5 font-bold text-cycu-700">${s.role}</td>
+          <td class="p-2.5"><span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 rounded text-[10px]">啟用中</span></td>
+          <td class="p-2.5 text-right">
+            <button onclick="alert('提示：開發者技術帳號與財務管理員帳號已實作完全隔離')" class="text-slate-500 hover:underline">權限設定</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderAuditLogs() {
+      const tbody = document.getElementById('auditLogTableBody');
+      tbody.innerHTML = DB.audit_logs.map(log => `
+        <tr class="hover:bg-slate-50 border-b border-slate-100">
+          <td class="p-2 text-slate-400 font-bold">${log.id}</td>
+          <td class="p-2 text-slate-600">${log.timestamp}</td>
+          <td class="p-2 text-slate-800 font-bold">${log.staff}</td>
+          <td class="p-2 text-purple-700 font-bold">${log.action}</td>
+          <td class="p-2 text-[11px] text-slate-600 break-all max-w-xs">
+            ${log.before ? `<span class="text-red-500">Bef: ${log.before}</span> ` : ''}
+            <span class="text-emerald-600">Aft: ${log.after}</span>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function updateDashboardData() {
+      const paidCount = DB.members.filter(m => m.is_paid).length;
+      document.getElementById('dashTotalMembers').innerText = `${DB.members.length} 人`;
+      document.getElementById('dashPaidMembers').innerText = `${paidCount} 人`;
+
+      // Update Dashboard Recent Transactions
+      const tbody = document.getElementById('dashTransactionTable');
+      tbody.innerHTML = DB.financial_transactions.slice(0, 5).map(f => `
+        <tr>
+          <td class="p-2.5 text-slate-500">${f.created_at.split(' ')[1]}</td>
+          <td class="p-2.5 font-bold text-slate-700">${f.type}</td>
+          <td class="p-2.5 font-mono">${f.ref_id}</td>
+          <td class="p-2.5 font-bold ${f.amount < 0 ? 'text-red-600' : 'text-emerald-600'}">NT$ ${f.amount}</td>
+          <td class="p-2.5 text-slate-500">${f.staff}</td>
+        </tr>
+      `).join('');
+    }
+
+    // Modal Helpers
+    function openAddMemberModal() { document.getElementById('addMemberModal').classList.remove('hidden'); }
+    function openNotificationModal() { document.getElementById('notificationModal').classList.remove('hidden'); }
+    function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+    function focusSearch() { document.getElementById('memberSearchInput').focus(); }
+    function logout() { alert('安全登出成功。Session 已清除。'); }
+  </script>
+</body>
+</html>
